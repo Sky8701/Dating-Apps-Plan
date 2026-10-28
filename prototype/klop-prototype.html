@@ -1,0 +1,437 @@
+<title>Prototype KLOP</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: ponsel di kiri berisi aplikasi yang bisa diklik; panel kanan = panduan demo + dashboard ops contoh. Palet "makan malam": aubergine + saffron. */
+:root{
+  --bg:#F4F1F6; --surface:#FFFFFF; --sunk:#EEE8F1; --ink:#1D1426; --muted:#6A5F72; --line:#E1D9E6;
+  --plum:#6B2D5C; --plum-ink:#FFFFFF; --plum-soft:#F1E3EE; --saffron:#E39A2A; --saffron-soft:#FCEFD9;
+  --ok:#2E7D5B; --ok-soft:#E1F2E9; --frame:#1D1426;
+  --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"Plus Jakarta Sans","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#120D17; --surface:#1E1726; --sunk:#271E31; --ink:#F2EAF4; --muted:#B3A7BB; --line:#352A40;
+  --plum:#C98BB9; --plum-ink:#1D1426; --plum-soft:#3A2437; --saffron:#F2B45A; --saffron-soft:#3B2C17;
+  --ok:#6FCF9F; --ok-soft:#183427; --frame:#000000; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#120D17; --surface:#1E1726; --sunk:#271E31; --ink:#F2EAF4; --muted:#B3A7BB; --line:#352A40;
+  --plum:#C98BB9; --plum-ink:#1D1426; --plum-soft:#3A2437; --saffron:#F2B45A; --saffron-soft:#3B2C17;
+  --ok:#6FCF9F; --ok-soft:#183427; --frame:#000000; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 56px}
+h1,h2,h3{font-family:var(--f-display);margin:0;line-height:1.15;text-wrap:balance}
+p{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--saffron);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.label{font-family:var(--f-mono);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+.top{max-width:1120px;margin:0 auto 24px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;justify-content:space-between}
+.top h1{font-size:clamp(1.5rem,3vw,2rem);font-weight:800}
+.top .note{font-size:.85rem;color:var(--muted);max-width:60ch}
+.stage{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:400px minmax(0,1fr);gap:32px;align-items:start}
+
+/* Ponsel */
+.phone{background:var(--frame);border-radius:44px;padding:12px;box-shadow:0 30px 60px -30px rgba(29,20,38,.45);position:sticky;top:16px}
+.screen{background:var(--surface);border-radius:34px;height:760px;display:flex;flex-direction:column;overflow:hidden}
+.status{display:flex;justify-content:space-between;padding:12px 24px 4px;font-family:var(--f-mono);font-size:.72rem;color:var(--muted)}
+.appbar{display:flex;align-items:center;gap:10px;padding:8px 18px 10px;border-bottom:1px solid var(--line)}
+.appbar .back{border:0;background:var(--sunk);width:32px;height:32px;border-radius:50%;display:grid;place-items:center}
+.appbar .back[disabled]{visibility:hidden}
+.logo{font-family:var(--f-display);font-weight:800;font-size:1.25rem;letter-spacing:-.01em}
+.logo b{color:var(--saffron)}
+.progress{margin-left:auto;display:flex;gap:4px}
+.progress i{width:14px;height:4px;border-radius:2px;background:var(--line)}
+.progress i.on{background:var(--plum)}
+.view{flex:1;overflow-y:auto;padding:18px 18px 22px;display:flex;flex-direction:column;gap:14px}
+.foot{padding:12px 18px 18px;border-top:1px solid var(--line);display:grid;gap:8px}
+
+.btn{border:0;border-radius:14px;padding:13px 16px;font-weight:700;background:var(--plum);color:var(--plum-ink);width:100%}
+.btn.ghost{background:var(--sunk);color:var(--ink)}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:.75rem;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--sunk)}
+.chip.saffron{background:var(--saffron-soft);color:var(--ink)}
+.chip.ok{background:var(--ok-soft);color:var(--ok)}
+.card{background:var(--sunk);border-radius:16px;padding:14px;display:grid;gap:8px}
+
+/* Sambutan */
+.hero-dinner{border-radius:20px;background:var(--plum);color:var(--plum-ink);padding:22px 18px;display:grid;gap:14px}
+.hero-dinner h2{font-size:1.75rem;font-weight:800}
+.table-art{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;justify-items:center}
+.table-art span{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:.8rem;background:var(--plum-ink);color:var(--plum)}
+.table-art .tbl{grid-column:1/-1;width:100%;height:12px;border-radius:6px;background:var(--saffron)}
+.steps3{display:grid;gap:8px}
+.steps3 div{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;font-size:.88rem}
+.steps3 b{width:28px;height:28px;border-radius:50%;background:var(--saffron-soft);display:grid;place-items:center;font-family:var(--f-mono);font-size:.8rem}
+
+/* Form */
+.field{display:grid;gap:6px}
+.field label{font-weight:600;font-size:.85rem}
+.field input{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:11px 12px;font:inherit}
+.seg{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:6px}
+.seg button{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 6px;font-weight:600;font-size:.85rem}
+.seg button[aria-pressed="true"]{background:var(--plum);border-color:var(--plum);color:var(--plum-ink)}
+
+/* Kuis */
+.qdim{display:flex;justify-content:space-between;align-items:center}
+.qtext{font-family:var(--f-display);font-size:1.35rem;font-weight:800}
+.opts{display:grid;gap:8px}
+.opt{border:1.5px solid var(--line);background:var(--surface);border-radius:14px;padding:13px 14px;text-align:left;font-weight:600;display:flex;gap:10px;align-items:center}
+.opt .k{font-family:var(--f-mono);font-size:.75rem;width:24px;height:24px;border-radius:7px;display:grid;place-items:center;background:var(--sunk);flex:none}
+.opt[aria-pressed="true"]{border-color:var(--plum);background:var(--plum-soft)}
+.opt[aria-pressed="true"] .k{background:var(--plum);color:var(--plum-ink)}
+.imp{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--saffron-soft);border-radius:12px;padding:10px 12px;font-size:.85rem}
+.switch{width:44px;height:26px;border-radius:13px;border:0;background:var(--line);position:relative;flex:none}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--surface);transition:left .15s}
+.switch[aria-checked="true"]{background:var(--saffron)}
+.switch[aria-checked="true"]::after{left:21px}
+
+/* Hasil */
+.result{border-radius:20px;padding:18px;background:var(--plum);color:var(--plum-ink);display:grid;gap:10px}
+.result h2{font-size:1.6rem;font-weight:800}
+.result .tags{display:flex;flex-wrap:wrap;gap:6px}
+.result .tags span{font-size:.75rem;font-weight:600;padding:3px 9px;border-radius:999px;background:rgba(255,255,255,.18)}
+.person{display:grid;grid-template-columns:40px 1fr auto;gap:10px;align-items:center;background:var(--sunk);border-radius:14px;padding:10px 12px}
+.av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:700;background:var(--plum-soft);color:var(--plum)}
+.score{font-family:var(--f-display);font-weight:800;font-size:1.3rem;text-align:right;line-height:1}
+.score small{display:block;font-family:var(--f-mono);font-size:.62rem;font-weight:400;color:var(--muted)}
+.meter{height:6px;border-radius:3px;background:var(--line);overflow:hidden;grid-column:2/4}
+.meter i{display:block;height:100%;background:var(--saffron)}
+
+/* Jadwal */
+.slot{border:1.5px solid var(--line);background:var(--surface);border-radius:16px;padding:12px 14px;text-align:left;display:grid;gap:4px}
+.slot[aria-pressed="true"]{border-color:var(--plum);background:var(--plum-soft)}
+.slot .row{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.slot b{font-family:var(--f-display);font-size:1.05rem}
+.price{display:flex;justify-content:space-between;align-items:baseline}
+.price b{font-family:var(--f-display);font-size:1.4rem}
+
+/* QR & tiket */
+.qr{background:#FFFFFF;border-radius:16px;padding:14px;justify-self:center;width:210px;height:210px}
+.qr svg{display:block;width:100%;height:100%}
+.ticket{border-radius:18px;background:var(--surface);border:1.5px dashed var(--plum);padding:16px;display:grid;gap:8px}
+.ticket .code{font-family:var(--f-mono);font-size:1.1rem;letter-spacing:.1em}
+.seats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.seat{background:var(--sunk);border-radius:12px;padding:8px;text-align:center;font-size:.75rem;display:grid;gap:2px;justify-items:center}
+.seat .av{width:32px;height:32px;font-size:.75rem}
+.seat.me .av{background:var(--plum);color:var(--plum-ink)}
+.ice{background:var(--saffron-soft);border-radius:14px;padding:12px 14px;font-size:.9rem;display:grid;gap:4px}
+
+/* Pasca-event */
+.pick{display:grid;grid-template-columns:40px 1fr;gap:10px;align-items:center;background:var(--sunk);border-radius:14px;padding:10px 12px}
+.pick .seg{grid-column:1/-1}
+.match{border-radius:20px;padding:20px;background:var(--ok-soft);display:grid;gap:10px;text-align:center;justify-items:center}
+.match .pair{display:flex;gap:-8px}
+.match .pair .av{width:56px;height:56px;font-size:1rem;border:3px solid var(--ok-soft)}
+.match .pair .av+.av{margin-left:-12px;background:var(--plum);color:var(--plum-ink)}
+.upsell{border-radius:18px;padding:16px;background:var(--plum);color:var(--plum-ink);display:grid;gap:8px}
+.upsell .btn{background:var(--plum-ink);color:var(--plum)}
+
+.toast{position:absolute;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:8px 14px;border-radius:999px;font-size:.8rem;white-space:nowrap}
+.screen-wrap{position:relative}
+
+/* Panel kanan */
+.side{display:grid;gap:20px;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;display:grid;gap:14px;min-width:0}
+.panel h2{font-size:1.25rem;font-weight:800}
+.guide{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.guide button{width:100%;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:9px 12px;display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:center}
+.guide button[aria-current="step"]{border-color:var(--plum);background:var(--plum-soft)}
+.guide .n{font-family:var(--f-mono);font-size:.75rem;width:24px;height:24px;border-radius:7px;background:var(--sunk);display:grid;place-items:center}
+.guide small{display:block;color:var(--muted);font-size:.8rem}
+.tblwrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.85rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--f-mono);font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;white-space:nowrap}
+td.n,th.n{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+tr.sum td{font-weight:700;background:var(--sunk)}
+.why{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.why div{background:var(--sunk);border-radius:12px;padding:12px;font-size:.85rem;display:grid;gap:4px}
+.why b{font-family:var(--f-display);font-size:.95rem}
+
+@media (max-width:880px){
+  .stage{grid-template-columns:minmax(0,1fr)}
+  .phone{position:static;max-width:420px;width:100%;margin:0 auto;border-radius:36px;padding:8px}
+  .screen{height:720px;border-radius:30px}
+  .why{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){.switch::after{transition:none}}
+</style>
+
+<header class="top">
+  <h1>Prototype KLOP</h1>
+  <p class="note">Mockup yang bisa diklik untuk menjelaskan ide ke calon rekan. Semua nama, angka peserta, dan venue adalah <strong>data contoh</strong>. Skor chemistry dihitung sungguhan dari jawabanmu.</p>
+</header>
+
+<div class="stage">
+  <div class="phone" aria-label="Simulasi aplikasi KLOP di ponsel">
+    <div class="screen screen-wrap">
+      <div class="status"><span>19.02</span><span>klop.id</span><span>5G</span></div>
+      <div class="appbar">
+        <button class="back" id="backBtn" aria-label="Kembali" type="button">
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <span class="logo">KLOP<b>.</b></span>
+        <div class="progress" id="progress" aria-hidden="true"></div>
+      </div>
+      <div class="view" id="view" aria-live="polite"></div>
+      <div class="foot" id="foot"></div>
+      <div class="toast" id="toast" hidden></div>
+    </div>
+  </div>
+
+  <aside class="side">
+    <section class="panel">
+      <div><span class="label">Panduan demo</span><h2>Alur peserta dari kuis sampai match</h2></div>
+      <ol class="guide" id="guide"></ol>
+    </section>
+
+    <section class="panel">
+      <div><span class="label">Dashboard ops · contoh</span><h2>Kamis malam, area Senopati</h2></div>
+      <p class="muted" style="font-size:.88rem">Tampilan tim KLOP setelah algoritma mengelompokkan peserta. Tiap meja 3 pria + 3 perempuan, rentang usia ±5 tahun, skor lintas gender dimaksimalkan.</p>
+      <div class="tblwrap"><table>
+        <thead><tr><th>Meja</th><th>Peserta (contoh)</th><th class="n">Rata-rata klop</th><th>Host</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Sekar, Rani, Nadia · Dimas, Bayu, Arya</td><td class="n">74%</td><td>Founding host A</td></tr>
+          <tr><td>2</td><td>Ayu, Tiara, Maya · Rio, Fajar, Kevin</td><td class="n">69%</td><td>Founding host A</td></tr>
+          <tr><td>3</td><td>Laras, Intan, Dewi · Yoga, Raka, Adit</td><td class="n">71%</td><td>Co-founder</td></tr>
+        </tbody>
+      </table></div>
+      <div class="tblwrap"><table>
+        <thead><tr><th>Ekonomi malam ini</th><th class="n">Rp</th></tr></thead>
+        <tbody>
+          <tr><td>Tiket 18 kursi × Rp 169.000</td><td class="n">3.042.000</td></tr>
+          <tr><td>Payment, PPh final, kartu &amp; name tag</td><td class="n">−206.820</td></tr>
+          <tr><td>Host berbayar (1 malam)</td><td class="n">−300.000</td></tr>
+          <tr><td>Per-cover fee venue, 18 × Rp 15.000 (mulai bulan ke-4)</td><td class="n">+270.000</td></tr>
+          <tr class="sum"><td>Laba malam ini</td><td class="n">2.805.180</td></tr>
+          <tr><td class="muted">Belanja makan peserta ke venue (±Rp 200 rb/orang)</td><td class="n muted">±3.600.000</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section class="panel">
+      <div><span class="label">Kenapa desainnya begini</span><h2>Keputusan produk di balik layar</h2></div>
+      <div class="why">
+        <div><b>Bank soal tetap</b>Semua orang menjawab soal yang sama, jadi skor bisa dihitung dan tidak berubah tiap hari.</div>
+        <div><b>Skor jujur</b>Selalu tampil dengan jumlah soal yang dibandingkan. Di aplikasi asli, skor disembunyikan sampai ada 15 soal yang sama.</div>
+        <div><b>Bertemu di meja, bukan swipe</b>Tidak ada chat in-app atau lokasi real-time. Lebih aman dan tidak butuh ribuan user aktif.</div>
+        <div><b>Kontak dibuka dua arah</b>Nomor WhatsApp hanya terbuka kalau kedua orang saling pilih setelah dinner.</div>
+      </div>
+    </section>
+  </aside>
+</div>
+
+<script>
+(function(){
+  var Q=[
+    {dim:"Energi",text:"Akhir pekan idealmu?",opts:["Jalan, ketemu orang baru","Di rumah, isi ulang tenaga"],ord:false},
+    {dim:"Keuangan",text:"Kalau sudah serius, keuangan berdua sebaiknya…",opts:["Digabung semua","Sebagian digabung","Dipisah, bagi tagihan"],ord:true},
+    {dim:"Keluarga",text:"Soal punya anak?",opts:["Ingin, dalam 3 tahun","Ingin, tapi nanti","Belum tahu","Tidak ingin"],ord:true},
+    {dim:"Nilai hidup",text:"Peran agama dalam keseharianmu?",opts:["Sangat penting","Penting, tapi fleksibel","Urusan pribadi"],ord:true},
+    {dim:"Konflik",text:"Saat berbeda pendapat dengan pasangan, kamu…",opts:["Bahas langsung saat itu","Tenangkan diri dulu"],ord:false},
+    {dim:"Gaya hidup",text:"Kencan pertama yang paling nyaman?",opts:["Kopi sore","Makan malam","Aktivitas: lari, museum"],ord:false}
+  ];
+  var PEOPLE=[
+    {n:"Sekar",g:"P",age:30,job:"Dokter gigi",ans:[1,1,1,1,1,1],imp:[0,0,1,1,0,0]},
+    {n:"Rani",g:"P",age:28,job:"Product designer",ans:[0,2,1,2,0,2],imp:[0,1,0,0,1,0]},
+    {n:"Nadia",g:"P",age:27,job:"Konsultan pajak",ans:[0,0,0,0,1,0],imp:[0,0,1,1,0,0]},
+    {n:"Dimas",g:"L",age:31,job:"Analis keuangan",ans:[1,1,1,1,1,1],imp:[0,1,1,0,0,0]},
+    {n:"Bayu",g:"L",age:29,job:"Arsitek",ans:[0,2,2,2,0,2],imp:[0,0,0,0,1,0]},
+    {n:"Arya",g:"L",age:33,job:"Pemilik kedai kopi",ans:[0,0,0,0,1,0],imp:[0,0,1,1,0,1]}
+  ];
+  var SLOTS=[
+    {id:"s1",day:"Kamis, 6 Nov",time:"19.00",area:"Senopati",fmt:"Dinner",left:"2 kursi tersisa untukmu"},
+    {id:"s2",day:"Sabtu, 8 Nov",time:"11.00",area:"Kemang",fmt:"Brunch",left:"4 kursi tersisa"},
+    {id:"s3",day:"Selasa, 11 Nov",time:"19.30",area:"PIK",fmt:"Dinner",left:"5 kursi tersisa"}
+  ];
+  var STEPS=[
+    {key:"welcome",t:"Sambutan",d:"Janji produk dalam satu layar"},
+    {key:"profile",t:"Profil singkat",d:"Data minimum untuk menyusun meja"},
+    {key:"quiz",t:"Kuis chemistry",d:"6 soal contoh dari bank 80 soal"},
+    {key:"result",t:"Kartu hasil",d:"Skor nyata vs 3 orang contoh"},
+    {key:"slots",t:"Pilih dinner",d:"Jadwal, area, harga"},
+    {key:"pay",t:"Bayar QRIS",d:"Simulasi pembayaran"},
+    {key:"ticket",t:"Tiket & meja",d:"Info H-1 + kartu ice-breaker"},
+    {key:"after",t:"Setelah dinner",d:"Mau ketemu lagi dengan siapa?"},
+    {key:"match",t:"Mutual match",d:"Kontak dibuka + KLOP Serius"}
+  ];
+  var st={step:0,q:0,name:"",age:"",me:"",seek:"",ans:Array(Q.length).fill(null),imp:Array(Q.length).fill(0),slot:null,picks:{}};
+  var view=document.getElementById("view"),foot=document.getElementById("foot"),back=document.getElementById("backBtn");
+
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+  function initials(n){return esc(n.trim().charAt(0).toUpperCase()||"K");}
+  function score(a,ai,b){var w=0,s=0;Q.forEach(function(q,i){var wi=(ai[i]||b.imp[i])?3:1,m=a[i]===b.ans[i]?1:(q.ord&&Math.abs(a[i]-b.ans[i])===1?.5:0);w+=wi;s+=wi*m;});return Math.round(s/w*100);}
+  function others(){var g=st.seek||(st.me==="L"?"P":"L");return PEOPLE.filter(function(p){return p.g===g;});}
+  function same(){var g=st.me||"L";return PEOPLE.filter(function(p){return p.g===g;});}
+  function ranked(){return others().map(function(p){return {p:p,s:score(st.ans,st.imp,p)};}).sort(function(a,b){return b.s-a.s;});}
+  function typeName(){var e=st.ans[0]===0,c=st.ans[4]===0;return e&&c?"Penjelajah Lugas":e?"Penjelajah Tenang":c?"Perumah Lugas":"Perumah Tenang";}
+  function toast(t){var el=document.getElementById("toast");el.textContent=t;el.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(function(){el.hidden=true;},2200);}
+  function rp(n){return "Rp "+n.toLocaleString("id-ID");}
+
+  function go(i){st.step=Math.max(0,Math.min(STEPS.length-1,i));render();view.scrollTop=0;}
+  back.addEventListener("click",function(){if(STEPS[st.step].key==="quiz"&&st.q>0){st.q--;render();}else go(st.step-1);});
+
+  function setFoot(primary,label,enabled,secondary){
+    foot.innerHTML="";
+    if(secondary){var b2=document.createElement("button");b2.type="button";b2.className="btn ghost";b2.textContent=secondary.label;b2.addEventListener("click",secondary.fn);foot.appendChild(b2);}
+    var b=document.createElement("button");b.type="button";b.className="btn";b.textContent=label;b.disabled=!enabled;b.addEventListener("click",primary);foot.appendChild(b);
+  }
+
+  var R={
+    welcome:function(){
+      view.innerHTML='<div class="hero-dinner"><span class="label" style="color:inherit;opacity:.8">Jakarta · dinner 6 orang</span><h2>Ketemu orang yang klop, secara langsung.</h2>'+
+        '<div class="table-art" aria-hidden="true"><span>S</span><span>D</span><span>R</span><div class="tbl"></div><span>B</span><span>N</span><span>A</span></div></div>'+
+        '<div class="steps3"><div><b>1</b><span><strong>Main kuis 4 menit.</strong> Kami pelajari nilai, gaya hidup, dan cara kamu berkomunikasi.</span></div>'+
+        '<div><b>2</b><span><strong>Duduk semeja dengan 5 orang.</strong> Dikelompokkan algoritma chemistry, dipandu host.</span></div>'+
+        '<div><b>3</b><span><strong>Pilih siapa yang mau kamu temui lagi.</strong> Kontak dibuka hanya kalau saling pilih.</span></div></div>'+
+        '<p class="muted" style="font-size:.8rem">1.240 orang Jakarta main kuis minggu ini (contoh)</p>';
+      setFoot(function(){go(1);},"Mulai kuis",true);
+    },
+    profile:function(){
+      view.innerHTML='<div><h2 style="font-size:1.4rem">Kenalan dulu</h2><p class="muted" style="font-size:.88rem">Dipakai untuk menyusun meja yang seimbang. Tidak ditampilkan ke orang lain.</p></div>'+
+        '<div class="field"><label for="nm">Nama panggilan</label><input id="nm" autocomplete="given-name" placeholder="mis. Hendri" value="'+esc(st.name)+'"></div>'+
+        '<div class="field"><label for="ag">Usia</label><input id="ag" inputmode="numeric" placeholder="25–35" value="'+esc(st.age)+'"></div>'+
+        '<div class="field"><span style="font-weight:600;font-size:.85rem">Aku</span><div class="seg" id="me"><button type="button" data-v="L">Pria</button><button type="button" data-v="P">Perempuan</button></div></div>'+
+        '<div class="field"><span style="font-weight:600;font-size:.85rem">Ingin bertemu</span><div class="seg" id="seek"><button type="button" data-v="P">Perempuan</button><button type="button" data-v="L">Pria</button></div></div>';
+      var nm=document.getElementById("nm"),ag=document.getElementById("ag");
+      function ok(){return st.name.trim()&&st.me&&st.seek;}
+      function seg(id,key){var box=document.getElementById(id);Array.prototype.forEach.call(box.children,function(b){b.setAttribute("aria-pressed",String(st[key]===b.dataset.v));b.addEventListener("click",function(){st[key]=b.dataset.v;if(key==="me"&&!st.seek)st.seek=b.dataset.v==="L"?"P":"L";R.profile();});});}
+      seg("me","me");seg("seek","seek");
+      nm.addEventListener("input",function(){st.name=nm.value;foot.querySelector(".btn:not(.ghost)").disabled=!ok();});
+      ag.addEventListener("input",function(){st.age=ag.value.replace(/\D/g,"").slice(0,2);ag.value=st.age;});
+      setFoot(function(){st.q=0;go(2);},"Lanjut ke kuis",ok());
+    },
+    quiz:function(){
+      var i=st.q,q=Q[i];
+      var h='<div class="qdim"><span class="chip saffron">'+esc(q.dim)+'</span><span class="mono muted" style="font-size:.8rem">'+(i+1)+' / '+Q.length+'</span></div>'+
+        '<p class="qtext">'+esc(q.text)+'</p><div class="opts">';
+      q.opts.forEach(function(o,k){h+='<button type="button" class="opt" data-k="'+k+'" aria-pressed="'+(st.ans[i]===k)+'"><span class="k">'+"ABCD"[k]+'</span>'+esc(o)+'</button>';});
+      h+='</div><div class="imp"><span><strong>Ini penting buatku.</strong> Soal ini diberi bobot 3× saat menghitung skor.</span><button type="button" class="switch" role="switch" id="impSw" aria-label="Tandai soal ini penting" aria-checked="'+(!!st.imp[i])+'"></button></div>';
+      view.innerHTML=h;
+      Array.prototype.forEach.call(view.querySelectorAll(".opt"),function(b){b.addEventListener("click",function(){st.ans[i]=+b.dataset.k;R.quiz();});});
+      document.getElementById("impSw").addEventListener("click",function(){st.imp[i]=st.imp[i]?0:1;R.quiz();});
+      var last=i===Q.length-1;
+      setFoot(function(){if(last)go(3);else{st.q++;R.quiz();view.scrollTop=0;}},last?"Lihat hasilku":"Soal berikutnya",st.ans[i]!==null);
+      markProgress();
+    },
+    result:function(){
+      var r=ranked(),tags=Q.map(function(q,i){return st.imp[i]?q.dim:null;}).filter(Boolean);
+      var h='<div class="result"><span class="label" style="color:inherit;opacity:.8">Kartu hasil · '+esc(st.name||"Kamu")+'</span><h2>'+typeName()+'</h2>'+
+        '<p style="font-size:.88rem;opacity:.9">'+esc(Q[0].opts[st.ans[0]])+'. Saat berbeda pendapat: '+esc(Q[4].opts[st.ans[4]].toLowerCase())+'.</p>'+
+        '<div class="tags">'+(tags.length?tags.map(function(t){return '<span>Penting: '+esc(t)+'</span>';}).join(""):'<span>Belum ada soal yang ditandai penting</span>')+'</div></div>'+
+        '<div><h3 style="font-size:1.05rem">Seberapa klop kamu dengan mereka?</h3><p class="muted" style="font-size:.8rem">Dari 6 soal yang sama. Di aplikasi asli skor baru tampil setelah 15 soal yang sama.</p></div>';
+      r.forEach(function(x){h+='<div class="person"><span class="av">'+initials(x.p.n)+'</span><span><strong>'+esc(x.p.n)+'</strong>, '+x.p.age+'<br><span class="muted" style="font-size:.8rem">'+esc(x.p.job)+' · contoh</span></span><span class="score">'+x.s+'%<small>6 soal</small></span><span class="meter"><i style="width:'+x.s+'%"></i></span></div>';});
+      view.innerHTML=h;
+      setFoot(function(){go(4);},"Cari dinner terdekat",true,{label:"Bandingkan dengan teman",fn:function(){
+        var link="https://klop.id/k/"+(st.name||"kamu").toLowerCase().replace(/[^a-z0-9]/g,"")+"-"+st.ans.join("");
+        var done=function(){toast("Link perbandingan disalin");};
+        try{navigator.clipboard.writeText(link).then(done,function(){toast(link);});}catch(e){toast(link);}
+      }});
+    },
+    slots:function(){
+      var h='<div><h2 style="font-size:1.4rem">Pilih dinner</h2><p class="muted" style="font-size:.88rem">Nama venue diumumkan H-1. Makanan dibayar sendiri di venue (±Rp 150–250 rb).</p></div>';
+      SLOTS.forEach(function(s){h+='<button type="button" class="slot" data-id="'+s.id+'" aria-pressed="'+(st.slot===s.id)+'"><span class="row"><b>'+s.day+'</b><span class="mono">'+s.time+'</span></span><span class="row"><span>'+s.fmt+' · area '+s.area+'</span><span class="chip">'+s.left+'</span></span></button>';});
+      h+='<div class="card"><div class="price"><span>Tiket KLOP Dinner</span><b>Rp 169.000</b></div><p class="muted" style="font-size:.8rem">Termasuk kursi di meja 6 orang, host, kartu ice-breaker, dan mutual match setelah acara.</p></div>';
+      view.innerHTML=h;
+      Array.prototype.forEach.call(view.querySelectorAll(".slot"),function(b){b.addEventListener("click",function(){st.slot=b.dataset.id;R.slots();});});
+      setFoot(function(){go(5);},"Bayar Rp 169.000",!!st.slot);
+    },
+    pay:function(){
+      view.innerHTML='<div><h2 style="font-size:1.4rem">Bayar dengan QRIS</h2><p class="muted" style="font-size:.88rem">Pindai dengan aplikasi bank atau e-wallet. Kursi ditahan 15 menit.</p></div>'+
+        '<div class="qr" role="img" aria-label="Kode QR contoh, tidak bisa dipindai">'+qrSvg()+'</div>'+
+        '<div class="card"><div class="price"><span>Total</span><b>Rp 169.000</b></div><p class="muted mono" style="font-size:.75rem">QR contoh untuk prototype · bukan pembayaran sungguhan</p></div>';
+      setFoot(function(){go(6);},"Saya sudah bayar (simulasi)",true);
+    },
+    ticket:function(){
+      var s=SLOTS.filter(function(x){return x.id===st.slot;})[0]||SLOTS[0],o=others(),m=same().slice(0,2),r=ranked();
+      var code="KLP-"+(s.day.replace(/\D/g,"")+"0").slice(0,3)+"-"+(st.ans.join("")).slice(0,4);
+      var seats='<div class="seat me"><span class="av">'+initials(st.name)+'</span><strong>'+esc(st.name||"Kamu")+'</strong><span class="muted">kamu</span></div>';
+      m.forEach(function(p){seats+='<div class="seat"><span class="av">'+initials(p.n)+'</span><strong>'+esc(p.n)+'</strong><span class="muted">'+p.age+'</span></div>';});
+      o.forEach(function(p){seats+='<div class="seat"><span class="av">'+initials(p.n)+'</span><strong>'+esc(p.n)+'</strong><span class="muted">'+p.age+'</span></div>';});
+      var top=r[0].p,sameQ=Q.map(function(q,i){return st.ans[i]===top.ans[i]?i:-1;}).filter(function(i){return i>=0;});
+      var qi=sameQ.length?sameQ[0]:4;
+      view.innerHTML='<div class="ticket"><div class="price"><span class="label">Tiket</span><span class="chip ok">Lunas</span></div><span class="code">'+code+'</span>'+
+        '<strong>'+s.fmt+' · '+s.day+', '+s.time+'</strong><span class="muted" style="font-size:.85rem">Area '+s.area+' · venue diumumkan H-1 via WhatsApp</span></div>'+
+        '<div><h3 style="font-size:1.05rem">Mejamu (H-1)</h3><p class="muted" style="font-size:.8rem">Rata-rata klop meja ini '+Math.round(r.reduce(function(a,x){return a+x.s;},0)/r.length)+'% · peserta contoh</p></div>'+
+        '<div class="seats">'+seats+'</div>'+
+        '<div class="ice"><span class="label">Kartu ice-breaker untuk mejamu</span><strong>Kamu dan '+esc(top.n)+' sama-sama menjawab "'+esc(Q[qi].opts[st.ans[qi]])+'" di soal '+esc(Q[qi].dim.toLowerCase())+'.</strong><span>Ceritakan satu pengalaman yang membuatmu yakin dengan jawaban itu.</span></div>';
+      setFoot(function(){go(7);},"Lompat ke setelah dinner",true);
+    },
+    after:function(){
+      var all=others().concat(same().slice(0,2));
+      var h='<div><h2 style="font-size:1.4rem">Gimana malam ini?</h2><p class="muted" style="font-size:.88rem">Pilihanmu rahasia. Kontak hanya dibuka kalau kalian saling pilih.</p></div>';
+      all.forEach(function(p){
+        var v=st.picks[p.n]||"";
+        h+='<div class="pick"><span class="av">'+initials(p.n)+'</span><span><strong>'+esc(p.n)+'</strong>, '+p.age+' <span class="muted" style="font-size:.8rem">· '+esc(p.job)+'</span></span>'+
+          '<div class="seg" data-n="'+esc(p.n)+'"><button type="button" data-v="date" aria-pressed="'+(v==="date")+'">Mau ketemu lagi</button><button type="button" data-v="friend" aria-pressed="'+(v==="friend")+'">Teman</button><button type="button" data-v="skip" aria-pressed="'+(v==="skip")+'">Lewati</button></div></div>';
+      });
+      view.innerHTML=h;
+      Array.prototype.forEach.call(view.querySelectorAll(".pick .seg"),function(box){Array.prototype.forEach.call(box.children,function(b){b.addEventListener("click",function(){st.picks[box.dataset.n]=b.dataset.v;var y=view.scrollTop;R.after();view.scrollTop=y;});});});
+      setFoot(function(){go(8);},"Kirim pilihan",Object.keys(st.picks).length>0);
+    },
+    match:function(){
+      var r=ranked().filter(function(x){return st.picks[x.p.n]==="date";});
+      var hit=r.filter(function(x){return x.s>=50;})[0];
+      var h;
+      if(hit){
+        h='<div class="match"><div class="pair"><span class="av">'+initials(st.name)+'</span><span class="av">'+initials(hit.p.n)+'</span></div><h2 style="font-size:1.5rem">Kamu dan '+esc(hit.p.n)+' saling pilih</h2>'+
+          '<p style="font-size:.88rem">Skor klop kalian '+hit.s+'%. Nomor WhatsApp-nya sekarang terbuka untukmu.</p><span class="chip mono">+62 812-xxxx-0417 · contoh</span></div>';
+      }else{
+        h='<div class="card" style="text-align:center"><h2 style="font-size:1.3rem">Belum ada yang saling pilih kali ini</h2><p class="muted" style="font-size:.88rem">Itu wajar. Target kami: 1 dari 4 peserta dapat mutual match di dinner pertamanya. Coba pilih "Mau ketemu lagi" untuk orang dengan skor tertinggi.</p></div>';
+      }
+      h+='<div class="upsell"><span class="label" style="color:inherit;opacity:.8">Untuk yang serius</span><h3 style="font-size:1.2rem">KLOP Serius</h3><p style="font-size:.88rem">Wawancara dengan matchmaker, verifikasi KTP, dan 4 perkenalan 1-on-1 yang dikurasi dalam 6 bulan.</p><div class="price"><span>Mulai</span><b>Rp 5.000.000</b></div><button type="button" class="btn" id="srs">Jadwalkan wawancara</button></div>';
+      view.innerHTML=h;
+      document.getElementById("srs").addEventListener("click",function(){toast("Matchmaker akan menghubungi via WhatsApp (simulasi)");});
+      setFoot(function(){st={step:0,q:0,name:"",age:"",me:"",seek:"",ans:Array(Q.length).fill(null),imp:Array(Q.length).fill(0),slot:null,picks:{}};go(0);},"Ulangi demo",true,hit?null:{label:"Ubah pilihan",fn:function(){go(7);}});
+    }
+  };
+
+  function qrSvg(){
+    var n=25,seed=7,cells="";function rnd(){seed=(seed*9301+49297)%233280;return seed/233280;}
+    function finder(x,y){return '<rect x="'+x+'" y="'+y+'" width="7" height="7" fill="#1D1426"/><rect x="'+(x+1)+'" y="'+(y+1)+'" width="5" height="5" fill="#FFFFFF"/><rect x="'+(x+2)+'" y="'+(y+2)+'" width="3" height="3" fill="#1D1426"/>';}
+    for(var y=0;y<n;y++)for(var x=0;x<n;x++){var inF=(x<8&&y<8)||(x>n-9&&y<8)||(x<8&&y>n-9);if(!inF&&rnd()>.52)cells+='<rect x="'+x+'" y="'+y+'" width="1" height="1" fill="#1D1426"/>';}
+    return '<svg viewBox="0 0 '+n+' '+n+'" shape-rendering="crispEdges"><rect width="'+n+'" height="'+n+'" fill="#FFFFFF"/>'+cells+finder(0,0)+finder(n-7,0)+finder(0,n-7)+'</svg>';
+  }
+
+  function markProgress(){
+    var p=document.getElementById("progress");p.innerHTML="";
+    STEPS.forEach(function(_,i){var e=document.createElement("i");if(i<=st.step)e.className="on";p.appendChild(e);});
+  }
+  function canJump(i){
+    if(i<=1)return true;
+    if(i===2)return !!(st.name.trim()&&st.me);
+    if(i>=3&&st.ans.some(function(a){return a===null;}))return false;
+    if(i>=5&&!st.slot)return false;
+    if(i===8&&!Object.keys(st.picks).length)return false;
+    return true;
+  }
+  function renderGuide(){
+    var g=document.getElementById("guide");g.innerHTML="";
+    STEPS.forEach(function(s,i){
+      var li=document.createElement("li"),b=document.createElement("button");b.type="button";
+      if(i===st.step)b.setAttribute("aria-current","step");
+      b.disabled=!canJump(i);if(b.disabled)b.style.opacity=".45";
+      b.innerHTML='<span class="n">'+(i+1)+'</span><span><strong>'+s.t+'</strong><small>'+s.d+'</small></span>';
+      b.addEventListener("click",function(){if(canJump(i))go(i);});
+      li.appendChild(b);g.appendChild(li);
+    });
+  }
+  function render(){back.disabled=st.step===0;R[STEPS[st.step].key]();markProgress();renderGuide();}
+
+  // Contoh jawaban terisi supaya panduan bisa melompat ke layar mana pun
+  function prefill(){st.name="Hendri";st.age="31";st.me="L";st.seek="P";st.ans=[1,1,1,1,1,0];st.imp=[0,0,1,1,0,0];st.slot="s1";}
+  var demoBtn=document.createElement("button");demoBtn.type="button";demoBtn.className="btn ghost";demoBtn.style.marginTop="4px";demoBtn.textContent="Isi contoh jawaban (lompat bebas)";
+  demoBtn.addEventListener("click",function(){prefill();render();toast("Contoh jawaban terisi");});
+  document.getElementById("guide").parentNode.appendChild(demoBtn);
+  render();
+})();
+</script>

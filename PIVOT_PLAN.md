@@ -328,7 +328,54 @@ flowchart LR
 
 ---
 
-## 12. Risiko Khusus Versi Lean
+## 12. Pendapatan Tambahan dari Restoran
+
+**Pertanyaan:** apakah KLOP Dinner bisa menarik komisi dari restoran, di luar tiket?
+
+**Jawaban singkat: bisa, nilainya +6–18% laba di base case. Nyata, tapi bukan pengubah permainan.** Ada satu hal yang perlu diperhatikan: Timeleft, pemimpin model ini, **sengaja tidak menerima dan tidak membayar venue**, supaya pilihan venue tetap netral demi peserta. Jadi komisi boleh diambil, asal tidak mengorbankan pengalaman peserta.
+
+### 12.1 Pembanding pasar
+
+| Pembanding | Model | Implikasi |
+|---|---|---|
+| Timeleft | Tidak ada komisi dua arah; peserta diminta belanja ±1 minuman/jam | Venue untung dari belanja tamu. Venue berhenti kerja sama kalau grup tidak belanja |
+| OpenTable | ±US$1–1,5 (≈ Rp 16–25 rb) per tamu yang datang dari jaringannya | Restoran terbiasa membayar per tamu yang dibawa platform |
+| Chope (Jakarta, ±1.800 restoran) | Langganan + booking fee per tamu | Preseden lokal sudah ada |
+| Belanja per orang (Senopati/Kemang, kategori $$) | Rp 100–250 rb | Dasar asumsi Rp 200 rb/orang |
+
+### 12.2 Lima opsi (base case, dihitung di `analysis/lean_model.py`)
+
+| Opsi | Cara kerja | Tambahan laba tahun 2 | Beban bagi restoran | Penilaian |
+|---|---|---:|---|---|
+| **A. Per-cover fee** | Rp 15 rb per tamu, **hanya slot Senin–Kamis** | +Rp 53 jt (+6,3%) | 7,5% belanja tamu, di malam yang biasanya sepi | ✅ **Mulai di sini.** Mudah diverifikasi (jumlah check-in), sejalan dengan kebiasaan OpenTable/Chope |
+| B. Komisi % tagihan | 10% dari bill | +Rp 83 jt (+9,8%) dengan asumsi bocor 30% | 10% | ❌ Sulit diverifikasi, rawan sengketa |
+| C. Set menu "Dinner Plus" | KLOP menjual tiket + set menu Rp 225 rb, harga grup dari restoran Rp 185 rb | +Rp 63 jt (+7,5%) | Diskon grup 18% | ⚠️ Opsional nanti. Omzet KLOP naik Rp 402 jt/thn (batas PKP lebih cepat), risiko refund & no-show pindah ke KLOP |
+| **D. Venue partner** | Rp 2,5 jt/bln per venue, dengan **jaminan minimum ±80–100 kursi/bln** + tampil di konten | +Rp 149 jt (+17,7%) dengan 3 venue (M6) → 5 venue (M10) | 12,5% belanja tamu di base; turun ke 6,9% di bull | ✅ **Tahap 2**, untuk venue unggulan. Pengganti A, bukan tambahan |
+| E. Natura | Welcome drink, meja/ruang terjamin, menu khusus | Menurunkan biaya, bukan revenue | – | ✅ Sejak pilot |
+
+**Jangan menumpuk A + D di venue yang sama.** Totalnya bisa mencapai ±17% belanja tamu, terlalu berat untuk margin restoran, dan venue terbaik akan mundur.
+
+### 12.3 Rekomendasi bertahap
+
+| Tahap | Waktu | Skema | Syarat |
+|---|---|---|---|
+| 1 | Pilot – bulan 3 | **Natura saja** (welcome drink, meja terjamin) | Bangun pasokan venue dan data rating |
+| 2 | Bulan 4+ (≥ 300 kursi/bln) | **A: per-cover fee Rp 15 rb** untuk slot Senin–Kamis | Tagihan bulanan dari data check-in KLOP |
+| 3 | Bulan 6–10+ | **D: venue partner** untuk 3–5 venue dengan rating tertinggi, menggantikan A | Jaminan kursi minimum tertulis |
+| 4 | Tahun 2 (opsional) | **C: Dinner Plus** sebagai produk premium | Setelah PKP & SOP refund siap |
+
+### 12.4 Aturan netralitas (wajib, tertulis)
+
+1. Venue dipilih dan dipertahankan berdasarkan **rating peserta** (minimal 4,3/5). Komisi tidak pernah memengaruhi pengelompokan meja.
+2. Venue dengan rating < 4,0 selama 2 bulan dikeluarkan, sebesar apa pun bayarannya.
+3. Harga menu untuk peserta KLOP **sama atau lebih murah** dari harga umum.
+4. Peserta diberi tahu bahwa KLOP bekerja sama dengan venue.
+
+**Pajak:** komisi dari restoran berbentuk PT bisa dipotong PPh 23 sebagai jasa perantara, kecuali KLOP menunjukkan surat keterangan PP 55/2022 (PPh final UMKM). Konfirmasi dengan konsultan pajak sebelum tagihan pertama.
+
+---
+
+## 13. Risiko Khusus Versi Lean
 
 | Risiko | Prob. | Dampak | Mitigasi |
 |---|:-:|:-:|---|
@@ -345,7 +392,7 @@ flowchart LR
 
 ---
 
-## 13. Ringkasan Produk (dari v1, tetap berlaku)
+## 14. Ringkasan Produk (dari v1, tetap berlaku)
 
 | Elemen | Ringkasan |
 |---|---|
@@ -360,7 +407,7 @@ flowchart LR
 
 ---
 
-## 14. Verdict Akhir
+## 15. Verdict Akhir
 
 | Pertanyaan | Jawaban |
 |---|---|
@@ -370,11 +417,12 @@ flowchart LR
 | Syarat mutlak sebelum mulai | Co-founder Komunitas & Ops yang tepat, plus perjanjian para pendiri dengan vesting dan IP assignment |
 | Moat | Belum ada di awal. Dibangun dari merek, rahasia dagang, data pertemuan nyata, komunitas, venue, dan reputasi keamanan |
 | Ekspansi | Kedalaman Jakarta → format baru → premium → B2B → city partner → white-label → regional dengan funding |
+| Komisi restoran? | **✅ Ya, bertahap:** natura → per-cover fee Rp 15 rb malam sepi (bulan 4) → paket venue partner (bulan 6–10). Tambahan +6–18% laba base. Tetap netral: venue dipilih dari rating peserta |
 | **Langkah minggu ini** | Cari co-founder Komunitas; daftar merek kelas 45 (Rp 500 rb); tulis perjanjian para pendiri; minta AI agent membuat draft 80 soal |
 
 ---
 
-## 15. Sumber
+## 16. Sumber
 
 **Biaya & regulasi**
 - [UKM Indonesia — Tarif pendaftaran merek naik 55% pada 2026, UMKM tetap Rp 500 rb](https://ukmindonesia.id/baca-deskripsi-posts/tarif-pendaftaran-merek-naik-55-pada-2026-dampak-dan-solusi-praktis-bagi-pelaku-umkm)
@@ -399,3 +447,12 @@ flowchart LR
 - [CB Insights — Pendanaan Timeleft](https://www.cbinsights.com/company/timeleft/financials)
 - [Statista — Indonesia dating services revenue by segment](https://www.statista.com/forecasts/1365568/indonesia-dating-services-revenue-by-segment)
 - [detikFinance — Biro jodoh eksekutif](https://finance.detik.com/read/2019/02/14/124919/4427786/4/biro-jodohnya-para-eksekutif-biaya-daftarnya-hingga-ratusan-juta)
+
+**Kerja sama restoran**
+- [Timeleft Help Center — Partnering with Timeleft (restaurants & bars)](https://help.timeleft.com/hc/en-150/articles/14236028247836-Partnering-with-Timeleft-Restaurants-Bars)
+- [Timeleft Help Center — Do I need to buy food or drinks at my Timeleft event?](https://help.timeleft.com/hc/en-150/articles/23810407006236-Do-I-Need-to-Buy-Food-or-Drinks-at-My-Timeleft-Event)
+- [Eat App — OpenTable pricing (biaya per tamu)](https://restaurant.eatapp.co/blog/opentable-pricing)
+- [OpenTable AU — Restaurant solutions](https://www.opentable.com.au/restaurant-solutions/?p=89606)
+- [DBS BusinessClass — Model bisnis Chope](https://www.dbs.com.sg/sme/businessclass/articles/business-strategy/chope.page)
+- [DailySocial — Chope Indonesia](https://en.dailysocial.id/post/chope-indonesia)
+- [Chope — Panduan area Senopati-Gunawarman (kisaran harga)](https://www.chope.co/jakarta-restaurants/pages/senopati-gunawarman-area-guide?lang=id_ID)

@@ -90,6 +90,57 @@ def run(name, p, verbose=True):
                   f" | per founder/bln: 3 org Rp{pr/12/3/1e6:.1f} jt, 5 org Rp{pr/12/5/1e6:.1f} jt")
     return rows, be, low
 
+# --- 3. Pendapatan tambahan dari restoran (dihitung terpisah dari model inti) ---
+AVG_SPEND = 200_000          # belanja makan/minum per peserta di venue $$ Senopati/Kemang [asumsi]
+WEEKNIGHT_SHARE = 0.60       # porsi kursi di slot Senin-Kamis (slot yang mau dibayar venue) [asumsi]
+RESTO_START = 4              # bulan mulai menagih restoran (setelah ritme & data rating ada)
+RESTO_OPTIONS = {
+    "A. Per-cover fee Rp 15 rb (malam sepi)": dict(kind="cover", fee=15_000),
+    "B. Komisi 10% tagihan (bocor 30%)":       dict(kind="pct", pct=0.10, leak=0.30),
+    "C. Set menu 'Dinner Plus' (30% ambil)":  dict(kind="bundle", take=0.30, sell=225_000, buy=185_000),
+    "D. Venue partner Rp 2,5 jt/bln/venue":   dict(kind="partner", fee=2_500_000),
+}
+
+def partner_venues(m):
+    return 0 if m < 6 else (3 if m < 10 else 5)
+
+def restaurant_income(p, opt):
+    out = []
+    for m in range(1, 25):
+        seats = seats_curve(m, p["seats_mature"], p["ramp"])
+        extra = gross = 0.0
+        if m >= RESTO_START:
+            if opt["kind"] == "cover":
+                gross = seats * WEEKNIGHT_SHARE * opt["fee"]
+                extra = gross * (1 - PPH_FINAL)
+            elif opt["kind"] == "pct":
+                gross = seats * AVG_SPEND * opt["pct"] * (1 - opt["leak"])
+                extra = gross * (1 - PPH_FINAL)
+            elif opt["kind"] == "bundle":
+                plus = seats * opt["take"]
+                gross = plus * opt["sell"]                      # omzet KLOP ikut naik (makanan ikut ditagih)
+                extra = plus * (opt["sell"] - opt["buy"]) - gross * (PAY_FEE + PPH_FINAL)
+            elif opt["kind"] == "partner":
+                gross = partner_venues(m) * opt["fee"]
+                extra = gross * (1 - PPH_FINAL)
+        out.append((m, gross, extra))
+    return out
+
+def print_restaurant(name, p):
+    rows, _, _ = run(name, p, verbose=False)
+    base_y1 = sum(r["profit"] for r in rows[:12]); base_y2 = sum(r["profit"] for r in rows[12:])
+    print(f"\n== Pendapatan restoran: {name} (laba inti thn 1 Rp{base_y1/1e6:,.0f} jt, thn 2 Rp{base_y2/1e6:,.0f} jt) ==")
+    for k, opt in RESTO_OPTIONS.items():
+        r = restaurant_income(p, opt)
+        y1 = sum(x[2] for x in r[:12]); y2 = sum(x[2] for x in r[12:]); m12 = r[11][2]; g2 = sum(x[1] for x in r[12:])
+        print(f"{k:40s} | M12 +Rp{m12/1e6:5.1f} jt/bln | thn1 +Rp{y1/1e6:5.0f} jt | thn2 +Rp{y2/1e6:5.0f} jt (+{y2/base_y2*100:4.1f}% laba)"
+              f" | omzet tambahan thn2 Rp{g2/1e6:,.0f} jt")
+    # porsi yang diambil dari belanja tamu di venue: pembanding beban bagi restoran (opsi tidak ditumpuk)
+    seats24 = seats_curve(24, p["seats_mature"], p["ramp"])
+    spend_per_venue = seats24 / partner_venues(24) * AVG_SPEND
+    print(f"Beban restoran (% belanja tamu): A {15_000/AVG_SPEND:.1%} di malam sepi | B {0.10:.0%} tertagih {0.10*0.7:.0%}"
+          f" | C diskon grup {(225_000-185_000)/225_000:.0%} | D {2_500_000/spend_per_venue:.1%} ({seats24/partner_venues(24):.0f} kursi/venue/bln)")
+
 if __name__ == "__main__":
     print("== Anggaran Fase 0 ==")
     for k, v in PHASE0:
@@ -107,3 +158,6 @@ if __name__ == "__main__":
     print(f"Kapasitas host co-founder gratis: {FREE_HOST_SEATS} kursi/bulan")
     for k, p in S.items():
         run(k, p)
+    print(f"\nAsumsi restoran: belanja Rp{AVG_SPEND:,}/orang, {WEEKNIGHT_SHARE:.0%} kursi di malam sepi, mulai M{RESTO_START}")
+    for k in ("Base", "Bull"):
+        print_restaurant(k, S[k])
